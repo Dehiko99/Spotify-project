@@ -1,0 +1,619 @@
+---
+title: "Spotify project"
+author: "Alberto"
+date: "2024-07-17"
+output: html_document
+---
+
+
+
+#NETWORK ANALYSIS
+
+```{r, warning = FALSE}
+library(tidyverse)
+```
+
+```{r}
+artists <- read.csv("Artisti_corr_4.csv")
+```
+
+##ARTISTS
+
+```{r, warning=FALSE}
+library(igraph)
+```
+
+The dataset consists in a uni-modal node.
+
+```{r}
+y <- data.frame(artists$ID, artists$RELATED_TO)
+```
+
+
+```{r}
+net <- graph.data.frame(y, directed = T)
+net
+```
+
+```{r}
+V(net)
+```
+
+```{r}
+E(net)
+```
+
+```{r}
+V(net)$degree <- degree(net)
+V(net)$degree
+```
+
+```{r}
+E(net)[1]
+```
+
+```{r}
+artists$RELATED_TO[1]
+```
+
+
+```{r}
+artists$RELATED_TO <- strsplit(artists$RELATED_TO, ",")
+```
+
+```{r}
+artists$RELATED_TO[1]
+```
+```{r}
+artists$RELATED_TO <- lapply(artists$RELATED_TO, function(x) x[x != ""])
+```
+
+```{r}
+artists$RELATED_TO[1]
+```
+
+```{r}
+artists
+```
+
+
+```{r}
+new_artists <- unnest(artists, cols=RELATED_TO)
+```
+
+```{r}
+new_artists 
+```
+```{r}
+length(unique(new_artists$ID))
+```
+
+```{r}
+unique_data <- distinct(new_artists, ID,POPULARITY, FOLLOWERS, .keep_all = TRUE)
+unique_data
+```
+
+```{r}
+y <- data.frame(new_artists$ID, new_artists$RELATED_TO)
+```
+
+
+```{r}
+net <- graph.data.frame(y, directed = T)
+```
+
+```{r}
+net
+```
+
+```{r}
+V(net)
+```
+
+```{r}
+E(net)
+```
+
+```{r}
+V(net)$label <- V(net)$name
+V(net)$degree <- degree(net)
+```
+
+```{r}
+V(net)$label [1:10]
+```
+
+```{r}
+V(net)$degree [1:10]
+```
+
+```{r}
+hist(V(net)$degree,
+     col ="red",
+     main = "Distribution of Node Degree",
+     xlab ="Degree of Vertices",
+     ylab ="Frequency")
+```
+
+```{r}
+percentages = c(0.01,0.50,0.80)
+quantile_values <- quantile(V(net)$degree, percentages)
+```
+
+```{r}
+cat(sprintf("1st percentile: %.2f\n", quantile_values[1]))
+```
+
+```{r}
+cat(sprintf("50th percentile (median): %.2f\n", quantile_values[2]))
+```
+
+```{r}
+cat(sprintf("80th percentile: %.2f\n", quantile_values[3]))
+```
+
+
+```{r}
+max(V(net)$degree)
+```
+
+```{r}
+#degree centrality
+degree_centr <- centr_degree(net, mode = "all")
+degree_centr <- degree_centr$res
+degree_centr [1:10]
+```
+
+```{r}
+#eigen centrality
+eigen_cent <- eigen_centrality(net)
+eigen_cent <- eigen_cent$vector
+eigen_cent [1:10]
+```
+
+```{r}
+#closeness centrality
+clos_cent <- igraph::closeness(net)
+clos_cent [1:10]
+```
+
+```{r}
+hist(clos_cent,
+     col ="red",
+     main = "Distribution of closeness centrality",
+     xlab ="Closeness",
+     ylab ="Frequency")
+```
+
+```{r}
+percentages = c(0.90, 0.95,0.99)
+quantile_values <- quantile(clos_cent, percentages)
+```
+
+```{r}
+cat(sprintf("1st percentile: %.2f\n", quantile_values[1]))
+```
+
+```{r}
+cat(sprintf("50th percentile (median): %.2f\n", quantile_values[2]))
+```
+
+```{r}
+cat(sprintf("80th percentile: %.2f\n", quantile_values[3]))
+```
+
+```{r}
+#betweeness centrality
+betw_cent <- igraph::betweenness(net)
+betw_cent [1:10]
+```
+
+
+```{r}
+rank_between_centr <- data.frame(unique_data$ID,unique_data$NAME,betw_cent)
+colnames(rank_between_centr) <- c("ID","NAME","BETW_CENT")
+rank_between_centr
+```
+
+```{r}
+rank_between_centr%>%
+arrange(desc(betw_cent))
+```
+
+```{r}
+rank_eigen_centr <- data.frame(unique_data$ID,unique_data$NAME, eigen_cent)
+colnames(rank_eigen_centr) <- c("ID","NAME","EIGEN_CENT")
+rank_eigen_centr
+```
+
+```{r}
+rank_between_centr%>%
+group_by(NAME)%>%
+arrange(desc(eigen_cent))
+```
+
+```{r}
+rank_close_centr <- data.frame(unique_data$ID,unique_data$NAME, clos_cent)
+colnames(rank_close_centr) <- c("ID","NAME","CLOS_CENT")
+rank_close_centr
+```
+
+```{r}
+rank_close_centr%>%
+arrange(desc(rank_close_centr))
+```
+
+```{r}
+rank_degree_centr <- data.frame(unique_data$ID,unique_data$NAME, degree_centr)
+colnames(rank_degree_centr) <- c("ID","NAME","DEGREE_CENTR")
+rank_degree_centr
+```
+
+```{r}
+rank_degree_centr%>%
+arrange(desc(degree_centr))
+```
+
+
+```{r}
+#V(net)$color <- "red"
+#V(net)[degree(net, mode = "in")>20]$color <- "gold"
+#E(net)$color <- "red"
+#plot(net)
+```
+
+
+```{r}
+str(new_artists)
+```
+
+```{r}
+new_artists$POPULARITY <- as.numeric(new_artists$POPULARITY)
+new_artists$FOLLOWERS <- as.numeric(new_artists$FOLLOWERS)
+```
+
+
+
+```{r, warning=FALSE}
+library(corrplot)
+```
+
+
+```{r}
+numerical_variables <- data.frame(rank_between_centr$BETW_CENT,rank_close_centr$CLOS_CENT,
+                                  rank_degree_centr$DEGREE_CENTR,rank_eigen_centr$EIGEN_CENT, 
+                                  unique_data$POPULARITY,unique_data$FOLLOWERS)
+```
+
+```{r}
+cor(numerical_variables)
+```
+
+```{r}
+unique_data
+```
+
+
+```{r}
+new_data = data.frame(unique_data$ID, unique_data$NAME,unique_data$GENRE_SEARCH ,unique_data$GENRES,unique_data$GENRE_SEARCH,numerical_variables)
+colnames(new_data) <- c("ID","NAME","GENRE_SEARCH","BETW_CENT","CLOS_CENT","DEGREE_CENT","EIGEN_CENT","POPULARITY","FOLLOWERS")
+new_data
+```
+
+```{r}
+ggplot(new_data)+
+  geom_point(aes(x=rank_degree_centr$DEGREE_CENTR,FOLLOWERS ))
+```
+```{r}
+ggplot(new_data)+
+  geom_point(aes(x=rank_degree_centr$DEGREE_CENTR,POPULARITY ))
+```
+
+
+
+
+
+
+##GENRES
+
+```{r}
+#colnames(unique_data) <- c("ID","NAME","GENRE_SEARCH","GENRES","POPULARITY","FOLLOWERS","RELATED_ARTIS_VER","RELATED_ARTIST_ATT","DO","DEGREE_CENTR","AA", "BETW_CENT","CLOS_CENT","")
+```
+
+
+```{r}
+unique_data
+```
+```{r}
+unique_data <- data.frame(unique_data, rank_between_centr$BETW_CENT, rank_close_centr$CLOS_CENT, 
+                          rank_degree_centr$DEGREE_CENTR, rank_eigen_centr$EIGEN_CENT)
+```
+
+
+
+```{r}
+unique_data$GENRE_SEARCH <- strsplit(unique_data$GENRE_SEARCH, ",")
+unique_data<- unnest(unique_data, col = GENRE_SEARCH)
+```
+
+```{r}
+unique_data
+```
+
+```{r}
+unique_data <- unique_data%>%
+dplyr::select(ID, NAME, GENRE_SEARCH,POPULARITY, FOLLOWERS,rank_between_centr.BETW_CENT, rank_close_centr.CLOS_CENT, rank_degree_centr.DEGREE_CENTR, rank_eigen_centr.EIGEN_CENT)
+```
+
+```{r}
+colnames(unique_data) <- c("ID","NAME","GENRE_SEARCH","POPULARITY","FOLLOWERS","BETW_CENTR","CLOS_CENTR","DEGREE_CENTR","EIGEN_CENTR")
+```
+
+```{r}
+unique_data
+```
+
+
+```{r}
+unique_data%>%
+group_by(GENRE_SEARCH)%>%
+summarise(MEAN_DEGREE_CENTR = mean(DEGREE_CENTR))%>%
+arrange(desc(MEAN_DEGREE_CENTR))
+```
+
+```{r}
+unique_data%>%
+group_by(GENRE_SEARCH)%>%
+summarise(MEAN_CLOSE_CENTR = mean(CLOS_CENTR))%>%
+arrange(desc(MEAN_CLOSE_CENTR))
+```
+
+```{r}
+unique_data%>%
+group_by(GENRE_SEARCH)%>%
+summarise(MEAN_EIGEN_CENTR = mean(EIGEN_CENTR))%>%
+arrange(desc(MEAN_EIGEN_CENTR))
+```
+
+```{r}
+genre <- unique_data%>%
+group_by(GENRE_SEARCH)%>%
+summarise(TOTAL_FOLLOWERS = mean(FOLLOWERS), TOTAL_POPULARITY = mean(POPULARITY),
+          TOTAL_DEGREE_CENTR = mean(DEGREE_CENTR), TOTAL_CLOS_CENTR = mean(CLOS_CENTR), 
+          TOTAL_EIGEN_CENTR = mean(EIGEN_CENTR), TOTAL_BETW_CENTR = mean(BETW_CENTR) )%>%
+arrange(desc(TOTAL_POPULARITY))
+```
+
+```{r}
+genre
+```
+
+```{r}
+genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(TOTAL_FOLLOWERS))
+```
+
+```{r}
+genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(TOTAL_DEGREE_CENTR))
+```
+
+
+```{r}
+hist(genre$TOTAL_CLOS_CENTR,
+     main="Distribution of closeness centrality",
+     xlab="Closeness Centrality per Genre",
+     ylab ="Freuqency",
+     col="red")
+```
+
+
+```{r}
+par(bg = "green4")
+hist(genre$TOTAL_DEGREE_CENTR,
+     main="Distribution of degree centrality",
+     xlab="Degree Centrality per Genre",
+     ylab ="Freuqency",
+     col="white",
+     col.main="white",
+     col.lab="white",
+     col.axis="black"
+)
+```
+
+
+```{r}
+par(bg = "green4")
+hist(genre$TOTAL_BETW_CENTR,
+     main="Distribution of betweeness centrality",
+     xlab="Betweeness Centrality per Genre",
+     ylab ="Freuqency",
+     col="white",
+     col.main="white",
+     col.lab="white",
+     col.axis="black"
+)
+```
+
+
+```{r}
+ggplot(genre)+
+  geom_point(aes(x=TOTAL_DEGREE_CENTR, y = TOTAL_FOLLOWERS))
+```
+
+```{r}
+ggplot(genre)+
+  geom_point(aes(x=TOTAL_POPULARITY, y = TOTAL_FOLLOWERS))
+```
+
+```{r}
+ggplot(genre)+
+geom_point(aes(x=TOTAL_DEGREE_CENTR, y = TOTAL_POPULARITY ))
+```
+
+
+```{r}
+ggplot(genre)+
+  geom_point(aes(x=TOTAL_CLOS_CENTR, y = TOTAL_POPULARITY))
+```
+```{r}
+ggplot(genre)+
+  geom_point(aes(x=TOTAL_BETW_CENTR, y = TOTAL_POPULARITY))
+```
+
+
+```{r}
+genre %>%
+group_by(GENRE_SEARCH)%>%
+summarise(mean_pop = mean(popularity))%>%
+arrange(desc(mean_pop))
+```
+
+
+```{r}
+genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(TOTAL_CLOS_CENTR))
+```
+
+
+```{r}
+genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(TOTAL_BETW_CENTR))
+```
+
+```{r}
+ggplot(genre)+
+  geom_point(aes(x=TOTAL_BETW_CENTR, y = TOTAL_POPULARITY))
+```
+
+
+```{r}
+unique_data
+```
+
+
+```{r}
+data <- unique_data%>%
+group_by(GENRE_SEARCH)%>%
+summarise(tot_degree = sum(DEGREE_CENTR), tot_popularity = mean(POPULARITY), tot_clos_centr = sum(CLOS_CENTR), tot_betw_cent = sum(BETW_CENTR), tot_followers = sum(FOLLOWERS) )%>%
+arrange(desc(tot_degree))
+```
+
+```{r}
+data
+```
+
+
+```{r}
+ggplot(data)+
+  geom_point(aes(x=tot_degree, y = tot_popularity))
+```
+```{r}
+cor(data$tot_popularity, data$tot_degree)
+```
+
+```{r}
+data$weights <- scale(data$tot_popularity, center = FALSE)
+data%>%
+dplyr::select(GENRE_SEARCH, weights)%>%
+arrange(desc(weights))
+```
+
+```{r}
+data
+```
+
+
+
+```{r}
+numeric_var <- data.frame(data$tot_degree, data$tot_popularity, data$tot_clos_centr, data$tot_betw_cent, data$tot_followers)
+cor(numeric_var)
+```
+
+
+```{r}
+genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(TOTAL_FOLLOWERS))
+```
+
+```{r}
+data
+```
+
+
+```{r}
+data%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(tot_degree))
+```
+
+
+```{r}
+ggplot(data, aes(x=tot_degree, y = tot_followers, size = weights))+
+  geom_point()+
+  labs(title = "Degree vs Popularity")+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+
+```{r}
+ggplot(data)+
+  geom_point(aes(x=tot_clos_centr, y = tot_followers, size = weights))
+```
+
+```{r}
+data%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(tot_betw_cent))
+```
+
+
+```{r}
+ggplot(data)+
+  geom_point(aes(x=tot_degree, y = tot_betw_cent, size = weights))
+```
+
+The Pop genre is the most influential.
+
+```{r}
+ggplot(data)+
+  geom_point(aes(x=tot_followers, y = tot_betw_cent, size = weights))
+```
+
+```{r}
+data%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(tot_clos_centr))
+```
+
+```{r}
+ggplot(data)+
+  geom_point(aes(x=tot_degree, y = tot_clos_centr, size = weights))
+```
+
+
+```{r}
+influential_genre <- data%>%
+mutate(normalized_degree = tot_degree/max(tot_degree), normalized_betw = tot_betw_cent/max(tot_betw_cent),normalized_clos = tot_clos_centr/max(tot_clos_centr), influential_score = normalized_degree + normalized_betw + normalized_clos)
+```
+
+
+
+```{r}
+influential_genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(desc(influential_score))
+```
+
+```{r}
+influential_genre%>%
+group_by(GENRE_SEARCH)%>%
+arrange(influential_score)
+```
