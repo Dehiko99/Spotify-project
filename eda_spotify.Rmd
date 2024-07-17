@@ -1,0 +1,125 @@
+---
+title: "Spotify project"
+author: "Alberto"
+date: "2024-07-17"
+output: html_document
+---
+
+```{r, warning = FALSE}
+library(tidyverse)
+```
+
+```{r}
+artists <- read.csv("Artisti_corr_4.csv")
+```
+
+```{r}
+artists[1:100,]
+```
+
+```{r}
+ncol(artists)
+```
+
+
+```{r}
+head(artists)
+```
+
+```{r}
+str(artists)
+```
+
+```{r}
+list_genre <- c(
+    "Pop",
+    "Rock",
+    "Rap",
+    "Jazz",
+    "Blues",
+    "Folk",
+    "Metal",
+    "Country",
+    "Classical",
+    "Reggae",
+    "Punk",
+    "Techno",
+    "Trance",
+    "EDM" ,
+    "Dubstep",
+    "Roots" ,
+    "R&B",
+    "Indie",
+    "Trap",
+    "Instrumental",
+    "Hip-hop",
+    "House",
+    "Salsa",
+    "Flamenco",
+    "Goa",
+    "Gospel",
+    "Tango", "K-pop", "Swing", "Dark", "Funky", "Piano", "Grime", "Aggrotech","Fusion","Industrial"
+)
+```
+
+
+```{r}
+count_obs_genre <- c(1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,986,1000,1000,1000,1000,1000,1000,819,761,255,1000,502,1000,971,1000,367,1000,609,216,1000,1000)
+```
+
+
+# EXPLORATORY ANALYSIS
+
+```{r}
+ggplot(data = artists)+
+  geom_point(aes(x=POPULARITY, y =FOLLOWERS), col="blue")
+```
+
+
+```{r}
+ggplot(artists)+
+  geom_histogram(aes(x=POPULARITY), binwidth = 30)+
+  ggtitle("Distribution of Popularity")+
+  xlab("Popularity")+
+  ylab("Count")
+```
+
+```{r}
+ggplot(artists)+
+  geom_histogram(aes(x=FOLLOWERS, binwidth = 50))
+```
+
+
+
+```{r}
+artists%>%
+group_by(NAME)%>%
+summarize(FOLLOWERS)%>%
+arrange(desc(FOLLOWERS))
+```
+
+```{r}
+artists%>%
+group_by(NAME)%>%
+summarize(n = n())%>%
+arrange(desc(n))
+```
+
+
+```{r}
+artists%>%
+group_by(GENRES)%>%
+summarise(number_followers = sum(FOLLOWERS))%>%
+arrange(desc(number_followers))
+```
+
+```{r}
+artists%>%
+group_by(GENRES)%>%
+summarise(number_followers = sum(FOLLOWERS))%>%
+arrange(number_followers)
+```
+
+```{r}
+cor(artists$POPULARITY, artists$FOLLOWERS)
+```
